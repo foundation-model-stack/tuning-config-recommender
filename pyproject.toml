@@ -19,7 +19,8 @@ dependencies = [
     "loguru",
     "pandas",
     "transformers",
-    "jsonpatch"
+    "jsonpatch",
+    "datasets"
 ]
 
 [project.optional-dependencies]

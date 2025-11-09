@@ -4,7 +4,7 @@ import os
 from copy import deepcopy
 from loguru import logger
 from tqdm import tqdm
-from utils import set_difference, set_issubset
+from recommender.utils import set_difference, set_issubset
 
 
 class RuleEngine:
