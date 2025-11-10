@@ -35,7 +35,7 @@ class IR:
     train_config: Optional[Dict] = field(default_factory=dict)
     compute_config: Optional[Dict] = field(default_factory=dict)
     dist_config: Optional[Dict] = field(default_factory=dict)
-    data_preprocessor: Optional[Dict] = field(default_factory=dict)
+    data_config: Optional[Dict] = field(default_factory=dict)
     # For json merge patch metadata
     level: Any = None
     type: Any = None
@@ -51,7 +51,7 @@ class IR:
             "train_config",
             "compute_config",
             "dist_config",
-            "data_preprocessor",
+            "data_config",
         ]
         for key in data_keys:
             if key in json_merge_patch.__dict__ and json_merge_patch.__dict__[key]:

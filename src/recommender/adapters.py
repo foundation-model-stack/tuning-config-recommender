@@ -22,7 +22,7 @@ class VanillaAdapter(Adapter):
             train_config=train_config,
             compute_config=compute_config,
             dist_config=dist_config,
-            data_preprocessor=data_config,
+            data_config=data_config,
         )
         ir_to_apply, json_patches = re.apply(ir=deepcopy(ir))
         return ir_to_apply, json_patches

@@ -81,7 +81,7 @@ class RuleEngine:
             )
         if (
             ir.train_config.get("training_data_path", None)
-            and len(ir.data_preprocessor.get("datasets", [])) > 0
+            and len(ir.data_config.get("datasets", [])) > 0
         ):
             ir.train_config.pop("training_data_path")
         logger.debug(f"IR {ir} is valid!")
