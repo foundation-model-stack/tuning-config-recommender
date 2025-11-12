@@ -15,6 +15,10 @@ class ApplyDistributedTraining(Action):
             return
         comment = Comment()
 
+        num_nodes = int(ir.compute_config.get("num_nodes", 1))
+        num_gpus_per_node = int(ir.compute_config.get("num_gpus_per_node", 1))
+        num_processes = num_nodes * num_gpus_per_node
+
         fsdp_sharding_strategy = "FULL_SHARD"
         if ir.compute_config.get("num_nodes", None):
             if int(ir.compute_config.get("num_nodes")) > 1:
@@ -31,6 +35,7 @@ class ApplyDistributedTraining(Action):
             comment.add(f"SHARDED_STATE_DICT is needed for compatibility")
 
         data = {
+            "num_processes": num_processes,
             "compute_environment": "LOCAL_MACHINE",
             "distributed_type": "FSDP",
             "fsdp_config": {
