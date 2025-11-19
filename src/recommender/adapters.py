@@ -22,8 +22,10 @@ class VanillaAdapter(Adapter):
         re = RuleEngine()
         re.register_all_inbuilt_actions()
         model_name_or_path = train_config["model_name_or_path"]
-        model_name_or_path = get_model_path(model_name_or_path, unique_tag=unique_tag)
-        train_config["model_name_or_path"] = model_name_or_path
+        local_model_name_or_path = get_model_path(model_name_or_path, unique_tag=unique_tag)
+        train_config["model_name_or_path"] = local_model_name_or_path
+        train_config["original_model_name_or_path"] = model_name_or_path
+
         ir = IR(
             train_config=train_config,
             compute_config=compute_config,
@@ -42,6 +44,10 @@ class FMSAdapter(VanillaAdapter):
         ir = ir.to_dict()
         target_dir = (self.base_dir / tag).resolve()
         target_dir.mkdir(parents=True, exist_ok=True)
+
+        orig = ir["train_config"].pop("original_model_name_or_path", None)
+        if orig:
+            ir["train_config"]["model_name_or_path"] = orig
 
         data_path = target_dir / "data_config.yaml"
         write_yaml_preserving_templates(ir.get("data_preprocessor", {}), data_path)
