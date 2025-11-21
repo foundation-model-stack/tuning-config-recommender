@@ -32,8 +32,14 @@ dev = [
     "pytest-asyncio",
 ]
 
+[tool.setuptools]
+include-package-data = true
+
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"recommender.knowledge_base" = ["*.csv"]
 
 [project.urls]
 Homepage = "https://github.com/foundation-model-stack/tuning-config-recommender"
