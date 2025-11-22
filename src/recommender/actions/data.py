@@ -98,12 +98,11 @@ class ApplyQAFormat(ApplyDataFormat):
     def _get_values_for_given_datapath(self, dataset_path: str):
         # TODO: Actions should made aware of the existing user changes
         # right now they work in replace-everything-first approach
-        jinja_template = "### Input: {{}} \\\n\\\n### Response: {{}}"
         input_text, response_text = determine_input_and_response_text(dataset_path)
-        template = jinja_template.format(input_text, response_text)
+        template = f"\"### Input: {{{{ {input_text} }}}}\\n\\n### Response: {{{{ {response_text} }}}}\""
         formatted_text_column_name = "formatted_qa_data"
         dataset_text_field = "formatted_qa_data"
-        response_template = "\\\n### Response:"
+        response_template = f"\\n### Response:"
         return {
             "template": template,
             "input_text": input_text,
@@ -152,7 +151,7 @@ class ApplyQAFormat(ApplyDataFormat):
 
         for dataset in ir.data_preprocessor["datasets"]:
             values_to_set = self._get_values_for_given_dataset(dataset)
-            ir.train_config = ir.train_config.update(
+            ir.train_config.update(
                 {
                     "dataset_text_field": values_to_set["dataset_text_field"],
                     "response_template": values_to_set["response_template"],
