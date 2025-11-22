@@ -5,7 +5,10 @@ from recommender.utils.train_config import (
     use_kb_for_batch_size,
 )
 from .actions import IR, Action, PatchLevel, PatchType, Comment
-
+from recommender.constants import (
+    DEFAULT_NUM_NODES,
+    DEFAULT_NUM_GPUS_PER_NODE,
+)
 
 class ApplyDistributedTraining(Action):
 
@@ -14,6 +17,10 @@ class ApplyDistributedTraining(Action):
             self.skip = True
             return
         comment = Comment()
+
+        num_nodes = int(ir.compute_config.get("num_nodes", DEFAULT_NUM_NODES))
+        num_gpus_per_node = int(ir.compute_config.get("num_gpus_per_node", DEFAULT_NUM_GPUS_PER_NODE))
+        num_processes = num_nodes * num_gpus_per_node
 
         fsdp_sharding_strategy = "FULL_SHARD"
         if ir.compute_config.get("num_nodes", None):
@@ -31,6 +38,7 @@ class ApplyDistributedTraining(Action):
             comment.add(f"SHARDED_STATE_DICT is needed for compatibility")
 
         data = {
+            "num_processes": num_processes,
             "compute_environment": "LOCAL_MACHINE",
             "distributed_type": "FSDP",
             "fsdp_config": {
