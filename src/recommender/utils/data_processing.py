@@ -42,6 +42,19 @@ def maybe_is_a_hf_dataset_id(training_data_path: str) -> bool:
     return len(training_data_path.split("/")) == 2
 
 
+def pick_train_split(dataset) -> str:
+    """Choose a split containing 'train' substring"""
+    splits = list(dataset.keys())
+    if not splits:
+        raise ValueError("Dataset has no splits.")
+    # substring match with 'train'
+    train_like = [s for s in splits if "train" in s.lower()]
+    if train_like:
+        return train_like[0]
+
+    return splits[0]
+
+
 def load_training_data(training_data_path: str) -> dict:
     """Load and validate training data based on training_data_path."""
     _dataset_cache = {}
@@ -55,7 +68,8 @@ def load_training_data(training_data_path: str) -> dict:
     elif os.path.isdir(training_data_path) or maybe_is_a_hf_dataset_id:
         try:
             dataset = load_dataset(training_data_path)
-            data = [dict(example) for example in dataset["train"]]
+            split=pick_train_split(dataset)
+            data = [dict(example) for example in dataset[split]]
             return data
         except Exception as e:
             raise ValueError(f"Error loading dataset from folder or hf id: {e}")

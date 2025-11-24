@@ -129,10 +129,8 @@ def determine_input_and_response_text(training_data_path: str) -> dict:
     return input_col, output_col
 
 
-def has_any_key_containing(example: dict, key_substrings: list[str]) -> bool:
-    """Check if any key in example contains any of the substrings in key_substrings"""
-    example_keys_lower = [k.lower() for k in example.keys()]
-    for key in key_substrings:
-        if key in example_keys_lower:
-            return True
-    return False
+def has_any_key_containing(example, key_substrings):
+    return any(
+        any(sub in key.lower() for sub in key_substrings)
+        for key in example.keys()
+    )
