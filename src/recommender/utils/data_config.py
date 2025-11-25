@@ -116,13 +116,13 @@ def determine_input_and_response_text(training_data_path: str) -> dict:
     input_col = "input"
     output_col = "output"
 
-    for col in COMMON_INPUT_KEYS:
-        if any(key in col.lower() for key in columns):
+    for col in columns:
+        if any(key in col.lower() for key in COMMON_INPUT_KEYS):
             input_col = col
             break
 
-    for col in COMMON_RESPONSE_KEYS:
-        if any(key in col.lower() for key in columns):
+    for col in columns:
+        if any(key in col.lower() for key in COMMON_RESPONSE_KEYS):
             output_col = col
             break
 
