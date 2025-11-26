@@ -39,7 +39,7 @@ include-package-data = true
 where = ["src"]
 
 [tool.setuptools.package-data]
-"recommender.knowledge_base" = ["*.csv"]
+"recommender.knowledge_base" = ["*.csv", "**/*.yaml"]
 
 [project.urls]
 Homepage = "https://github.com/foundation-model-stack/tuning-config-recommender"
