@@ -21,7 +21,7 @@ dependencies = [
     "transformers",
     "jsonpatch",
     "datasets",
-    "fm-training-estimator"
+    "fm-training-estimator>=0.1.1"
 ]
 
 [project.optional-dependencies]

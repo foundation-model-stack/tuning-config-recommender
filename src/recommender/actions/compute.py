@@ -7,6 +7,12 @@ from .actions import IR, Action, Comment, PatchLevel, PatchType
 
 class ApplyComputeConfig(Action):
 
+    _recommender:MinGpuRecommenderCaller = None
+    def __init__(self):
+        if self._recommender == None:
+            logger.debug(f"No recommender instance set.. creating one")
+            self._recommender = MinGpuRecommenderCaller()
+    
     def _infer_model_name(self, m:str) -> str:
         """
         Method to infer model name from model_name_or_path parameter in the IR
@@ -44,9 +50,7 @@ class ApplyComputeConfig(Action):
 
         logger.debug(f"IR has the configuration workers:{num_nodes} gpus:{num_gpus_per_node}")
         # invoke min_gpu_recommender
-        #
-        recommender = MinGpuRecommenderCaller()
-
+        
         r_model_name = ir.train_config.get("model_name_or_path", None)
         if not r_model_name:
             raise Exception(f"model name was not populated in the representation {ir}")
@@ -80,7 +84,7 @@ class ApplyComputeConfig(Action):
                 "model_version": "2.0.0"
             }
             logger.debug(f"Sending this configuration to min gpu recommender: {configuration}")
-            res = recommender.run(configuration, "min_gpu")
+            res = self._recommender.run(configuration, "min_gpu")
             if res["gpus_per_worker"] == -1:
                 logger.debug(f"Recommender was not able to issue recommender for {configuration}")
                 continue
