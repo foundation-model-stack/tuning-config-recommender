@@ -20,7 +20,8 @@ dependencies = [
     "pandas",
     "transformers",
     "jsonpatch",
-    "datasets"
+    "datasets",
+    "fm-training-estimator"
 ]
 
 [project.optional-dependencies]
