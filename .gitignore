@@ -2,3 +2,4 @@
 **/__pycache__/
 **/recommender.egg-info/
 **/.DS_Store
+**/tmp
