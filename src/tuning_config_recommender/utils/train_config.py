@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 import yaml
+from tuning_config_recommender.utils.kb_table import query_kb
 
 script_dir = Path(__file__).resolve().parent
 
@@ -96,33 +97,13 @@ def use_kb_for_batch_size(user_input: dict):
     return batch_size_configs
 
 
-def fetch_from_knowledge_base(model_name_or_path: str, config_folder) -> dict:
-    """Load the default values for the training config"""
-    current_dir = Path(__file__).parent
-    project_root = current_dir.parent / "knowledge_base" / "model_defaults"
-    directories = [os.path.basename(d) for d in project_root.iterdir() if d.is_dir()]
-
+def fetch_from_knowledge_base(model_name_or_path: str, kb_section):
     model_name = (
         model_name_or_path.split("/")[-1]
         if "/" in model_name_or_path
         else model_name_or_path
     )
-
-    directory_to_load = model_name if model_name in directories else "general_defaults"
-    found = True
-    if directory_to_load == "general_defaults":
-        found = False
-
-    train_args_file_path = (
-        project_root / directory_to_load / config_folder / "train_args.yaml"
-    )
-    try:
-        with open(train_args_file_path) as file:
-            data = yaml.safe_load(file)
-    except Exception:
-        data = {}
-
-    return data, found
+    return query_kb(model_name, kb_section)
 
 
 def get_model_config(model_name_or_path: str):
