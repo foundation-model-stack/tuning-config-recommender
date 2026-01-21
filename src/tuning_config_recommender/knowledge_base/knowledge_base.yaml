@@ -1,0 +1,159 @@
+version: 1
+# ===================================================================
+# CHAT TEMPLATE HEURISTIC MAPPINGS
+# ===================================================================
+chat_template_map:
+  ibm-granite/granite-4.0-tiny-preview:
+    - tiny
+    - small
+
+# ===================================================================
+# GENERAL DEFAULTS
+# ===================================================================
+general_defaults:
+  train_args:
+    use_flash_attn: true
+    include_tokens_per_second: true
+    num_train_epochs: 1
+    per_device_train_batch_size: 1
+    gradient_accumulation_steps: 1
+    gradient_checkpointing: true
+    gradient_checkpointing_kwargs: '{"use_reentrant": true}'
+    learning_rate: "5e-05"
+    logging_steps: 50
+    logging_strategy: steps
+    max_seq_length: 4096
+    bf16: "True"
+    resume_from_checkpoint: true
+    lr_scheduler_type: linear
+    warmup_ratio: 0.03
+    packing: "False"
+    ddp_timeout: "7200"
+    eval_strategy: no
+    torch_dtype: bfloat16
+    optim: adamw_torch
+    adam_beta1: 0.9
+    adam_beta2: 0.98
+    weight_decay: 0.1
+    adam_epsilon: 1e-10
+    dataloader_drop_last: true
+
+# ===================================================================
+# MODEL-SPECIFIC DEFAULTS
+# ===================================================================
+models:
+
+  # ---------------------------------------------------------------
+  # granite-2b-base
+  # ---------------------------------------------------------------
+  granite-2b-base:
+    data_config:
+      data_formatter_template: "### Question: {{question}}\n\n### Answer: {{answer}}"
+      response_template: "\\\n### Answer:"
+
+  # ---------------------------------------------------------------
+  # granite-3.1-3b-a800m-base
+  # ---------------------------------------------------------------
+  granite-3.1-3b-a800m-base:
+    accelerate_launch_args:
+      use_fsdp: true
+      fsdp_auto_wrap_policy: TRANSFORMER_BASED_WRAP
+      fsdp_forward_prefetch: false
+      fsdp_offload_params: false
+      fsdp_sharding_strategy: HYBRID_SHARD
+      fsdp_state_dict_type: SHARDED_STATE_DICT
+      fsdp_cpu_ram_efficient_loading: true
+      fsdp_sync_module_states: true
+
+    chat_template: |
+      {%- if messages[0]['role'] == 'system' %}
+          {%- set system_message = messages[0]['content'] %}
+          {%- set loop_messages = messages[1:] %}
+      {%- else %}
+          {%- set system_message = "Knowledge Cutoff Date: April 2024.\nToday's Date: " + strftime_now('%B %d, %Y') + ".\nYou are Granite, developed by IBM." %}
+          {%- set loop_messages = messages %}
+      {%- endif %}
+      {{- '<|start_of_role|>system<|end_of_role|>' + system_message + '<|end_of_text|>\n' }}
+      {%- for message in loop_messages %}
+          {{- '<|start_of_role|>' + message['role'] + '<|end_of_role|>' + message['content'] + '<|end_of_text|>\n' }}
+          {%- if loop.last and add_generation_prompt %}
+              {{- '<|start_of_role|>assistant<|end_of_role|>' }}
+          {%- endif %}
+      {%- endfor %}
+
+  # ---------------------------------------------------------------
+  # granite-3.1-8b-base
+  # ---------------------------------------------------------------
+  granite-3.1-8b-base:
+    chat_template: |
+      {%- if messages[0]['role'] == 'system' %}
+          {%- set system_message = messages[0]['content'] %}
+          {%- set loop_messages = messages[1:] %}
+      {%- else %}
+          {%- set system_message = "Knowledge Cutoff Date: April 2024.
+      Today's Date: " + strftime_now('%B %d, %Y') + ".
+      You are Granite, developed by IBM." %}
+          {%- if tools and documents %}
+              {%- set system_message = system_message + " You are a helpful AI assistant with access to the following tools." %}
+          {%- elif tools %}
+              {%- set system_message = system_message + " You are a helpful AI assistant with access to the following tools." %}
+          {%- elif documents %}
+              {%- set system_message = system_message + " Write responses grounded in documents." %}
+          {%- else %}
+              {%- set system_message = system_message + " You are a helpful AI assistant." %}
+          {%- endif %}
+          {%- set loop_messages = messages %}
+      {%- endif %}
+      {{- '<|start_of_role|>system<|end_of_role|>' + system_message + '<|end_of_text|>\n' }}
+      {%- for message in loop_messages %}
+          {{- '<|start_of_role|>' + message['role'] + '<|end_of_role|>' + message['content'] + '<|end_of_text|>\n' }}
+          {%- if loop.last and add_generation_prompt %}
+              {{- '<|start_of_role|>assistant<|end_of_role|>' }}
+          {%- endif %}
+      {%- endfor %}
+
+
+    # -------------------------
+    # LoRA defaults
+    # -------------------------
+    lora:
+      peft_method: lora
+      lora_alpha: 8
+      lora_dropout: 0.1
+      r: 8
+      target_modules: all-linear
+      modules_to_save:
+        - lm_head
+        - embed_token
+
+
+    train_args:
+      gradient_accumulation_steps: 1
+      gradient_checkpointing: true
+      gradient_checkpointing_kwargs: '{"use_reentrant": true}'    
+      optim: adamw_torch
+      learning_rate: 1e-06
+      warmup_steps: 200
+      adam_beta1: 0.9
+      adam_beta2: 0.98
+      weight_decay: 0.1
+      adam_epsilon: 1e-10
+      warmup_ratio: 0.1
+      learning_rate: 1e-06
+      num_train_epochs: 1
+      max_steps: 10
+      max_seq_length: 8192
+      per_device_train_batch_size: 32
+      split_batches: true
+      save_strategy: epoch
+      logging_strategy: steps
+      logging_steps: 1
+      lr_scheduler_type: linear
+      warmup_ratio: 0.03
+      gradient_accumulation_steps: 1
+      gradient_checkpointing: true
+      gradient_checkpointing_kwargs: '{"use_reentrant": true}'
+      additional_special_tokens:
+        - "<|start_of_role|>"
+        - "<|end_of_role|>"
+        - "<|tool_call|>"

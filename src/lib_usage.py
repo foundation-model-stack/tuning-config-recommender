@@ -10,11 +10,12 @@ module = importlib.import_module("a")  # a.py
 MyClass = module.MyClass
 
 if __name__ == "__main__":
+
     print("\n### Vanilla Adapter ###\n")
     adapter = VanillaAdapter()
     train_config = {
-        "model_name_or_path": "ibm-granite/granite-4.0-h-350m",
-        "training_data_path": "ought/raft",
+        "model_name_or_path": "ibm-granite/granite-3.1-8b-base",
+        "training_data_path": "tatsu-lab/alpaca",
         "tuning_strategy": "full",
     }
     ir_to_apply, json_patches = adapter.execute(
@@ -31,8 +32,8 @@ if __name__ == "__main__":
 
     result = fms_adapter.execute(
         train_config={
-            "model_name_or_path": "ibm-granite/granite-4.0-h-350m",
-            "training_data_path": "ought/raft",
+            "model_name_or_path": "ibm-granite/granite-3.1-8b-base",
+            "training_data_path": "tatsu-lab/alpaca",
             "tuning_strategy": "full",
         },
         compute_config={},

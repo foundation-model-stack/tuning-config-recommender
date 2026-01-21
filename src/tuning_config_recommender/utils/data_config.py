@@ -10,31 +10,7 @@ from tuning_config_recommender.utils.data_processing import (
 )
 from tuning_config_recommender.utils.train_config import (
     fetch_from_knowledge_base,
-    is_model_type_moe,
 )
-
-
-def get_model_for_chat_template_mapping(model_name_or_path):
-    # Direct
-    model_name = model_name_or_path.split("/")[-2]
-
-    base_dir = Path(__file__).parent.parent
-    config_path = (
-        base_dir / "knowledge_base" / "default_mappings" / "chat_template_map.yaml"
-    )
-    with open(config_path) as file:
-        MODEL_NAME_FOR_CHAT_TEMPLATE_MAPPING = yaml.safe_load(file)
-
-    for model_id, keywords in MODEL_NAME_FOR_CHAT_TEMPLATE_MAPPING.items():
-        for keyword in keywords:
-            if keyword in model_name:
-                return model_id
-
-    is_moe_model = is_model_type_moe(model_name_or_path)
-    if is_moe_model:
-        return "ibm-granite/granite-4.0-tiny-preview"
-
-    return None
 
 
 def fetch_chat_template(model_name_or_path: str):
@@ -42,29 +18,19 @@ def fetch_chat_template(model_name_or_path: str):
     if os.path.isdir(model_name_or_path):
         with open(f"{model_name_or_path}/tokenizer_config.json", encoding="utf-8") as f:
             config = json.load(f)
-            if "chat_template" not in config:
-                model_name = "ibm-granite/" + model_name_or_path.split("/")[-2].replace(
-                    "base", "instruct"
-                )
-                config = load_model_file_from_hf(model_name, "tokenizer_config.json")
-
-                # If couldn't fetch instruct model from HF, fallback to defaults mapping
-                model_name = get_model_for_chat_template_mapping(model_name_or_path)
-                if model_name:
-                    config = load_model_file_from_hf(
-                        model_name, "tokenizer_config.json"
-                    )
 
     elif (
         result := fetch_from_knowledge_base(
-            model_name_or_path, config_folder="chat_template"
+            model_name_or_path, kb_section="chat_template"
         )
     )[1]:
-        config = result[0]
-        additional_special_tokens = fetch_from_knowledge_base(
-            model_name_or_path, config_folder="additional_special_tokens"
-        )[0]
-        config.update(additional_special_tokens) if additional_special_tokens else None
+        config = {"chat_template": result[0]}
+        additional_special_tokens, _ = fetch_from_knowledge_base(
+            model_name_or_path, kb_section="additional_special_tokens"
+        )
+        if additional_special_tokens:
+            config["additional_special_tokens"] = additional_special_tokens
+
     else:
         try:
             config = load_model_file_from_hf(
