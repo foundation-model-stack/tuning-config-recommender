@@ -63,7 +63,7 @@ class FMSAdapter(VanillaAdapter):
     def execute(
         self, train_config, compute_config, dist_config, data_config, unique_tag, paths
     ):
-        if not data_config:
+        if not data_config and not train_config.get("training_data_path", None):
             # "paths" = {
             #     "chat_data": "",
             #     "qa_data": "",
