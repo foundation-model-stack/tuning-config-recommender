@@ -1,3 +1,0 @@
-"gradient_accumulation_steps": 1
-"gradient_checkpointing": true
-"gradient_checkpointing_kwargs": '{"use_reentrant": true}'

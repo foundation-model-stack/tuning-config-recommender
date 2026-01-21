@@ -1,5 +1,0 @@
-# Heuristic to match models to their chat template. The list of items are the keywords to be checked against in the model name. The key is the model who's chat template is to be used.
-
-ibm-granite/granite-4.0-tiny-preview:
-  - tiny
-  - small

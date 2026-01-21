@@ -1,6 +1,0 @@
-"peft_method": lora
-"lora_alpha": 8
-"lora_dropout": 0.1
-"r": 8
-"target_modules": all-linear
-"modules_to_save": ["lm_head", "embed_token"]
