@@ -8,6 +8,12 @@
 pip install -e .
 ```
 
+or from PyPI
+
+```
+pip install tuning_config_recommender
+```
+
 ## Library Usage
 
 An example is given in `lib_usage.py` file which generates tuning configuration for [fms-hf-tuning](https://github.com/foundation-model-stack/fms-hf-tuning) stack given model `ibm-granite/granite-4.0-h-350m` and dataset with HF ID `ought/raft`.
@@ -33,6 +39,16 @@ Writing custom action rules for custom modification would require following the 
 2. Should subclass from `Action` class
 
 An example can be found at [custom_rules_dir](./custom_rules_dir/).
+
+## API Usage
+
+After installing it as a module you can start an API as
+
+```
+uvicorn tuning_config_recommender.api:app --reload
+```
+
+`/docs` endpoint provides details on the endpoint to make requests.
 
 ## Architecture
 
