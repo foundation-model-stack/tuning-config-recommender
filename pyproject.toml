@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tuning_config_recommender"
-version = "0.1.0"
+version = "0.1.5"
 authors = [
     { name = "Mehant Kammakomati", email = "mehant.kammakomati2@ibm.com" },
     { name = "Harikrishnan Balagopal", email = "harikrishnan.balagopal@ibm.com" },
