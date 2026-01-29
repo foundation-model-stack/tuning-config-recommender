@@ -1,0 +1,5 @@
+from python:3.12
+WORKDIR /app
+COPY . .
+RUN pip install -e .
+CMD ["python"]
