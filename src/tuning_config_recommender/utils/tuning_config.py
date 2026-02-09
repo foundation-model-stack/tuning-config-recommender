@@ -57,10 +57,10 @@ def use_kb_for_batch_size(user_input: dict):
         script_dir.parent / "knowledge_base" / "tuning_run_data.csv"
     )
     df = pd.read_csv(training_run_data_path)
-
+    per_device_train_batch_size = user_input.get("per_device_train_batch_size", 8)
     model_name_or_path = str(user_input.get("model_name_or_path", ""))
     tuning_strategy = user_input.get("tuning_strategy", "")
-    max_seq_length = user_input.get("max_seq_length", 2048)
+    max_seq_length = user_input.get("max_seq_length", 4096)
 
     try:
         model_name_or_path = model_name_or_path.split("/")[-2]
@@ -89,9 +89,11 @@ def use_kb_for_batch_size(user_input: dict):
         batch_size_configs.update(
             {
                 "per_device_train_batch_size": int(
-                    match.get("per_device_train_batch_size", 1)
+                    match.get(
+                        "per_device_train_batch_size", per_device_train_batch_size
+                    )
                 ),
-                "model_max_length": int(match.get("model_max_length", 2048)),
+                "model_max_length": int(match.get("model_max_length", max_seq_length)),
                 "number_gpus": int(match.get("number_gpus", 16)),
             }
         )

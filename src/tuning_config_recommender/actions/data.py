@@ -262,7 +262,7 @@ class ApplyChatFormat(ApplyDataFormat):
             values_to_set = self._get_values_for_given_dataset(
                 dataset,
                 ir.tuning_config["model_name_or_path"],
-                ir.tuning_config.get("max_seq_length", 2048),
+                ir.tuning_config.get("max_seq_length", 4096),
             )
             dataset["data_handlers"] = values_to_set["data_handlers"]
             # TODO: all datasets can only use one chat template

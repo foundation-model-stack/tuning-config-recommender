@@ -56,10 +56,36 @@ async def recommend(
     background_tasks: BackgroundTasks,
     req: RecommendationsRequest,
 ):
-    err_msg = (
-        "Generation failed, please provide correct inputs or report it to the team!"
-    )
     try:
+        # Validate required fields
+        if not req.tuning_config:
+            return JSONResponse(
+                status_code=400,
+                content=jsonable_encoder({"message": "tuning_config is required"}),
+            )
+
+        # Validate model name or path
+        if not req.tuning_config.get("model_name_or_path"):
+            return JSONResponse(
+                status_code=400,
+                content=jsonable_encoder(
+                    {"message": "model_name_or_path is required in tuning_config"}
+                ),
+            )
+
+        # Validate training data path or data config
+        if not req.tuning_data_config and not req.tuning_config.get(
+            "training_data_path"
+        ):
+            return JSONResponse(
+                status_code=400,
+                content=jsonable_encoder(
+                    {
+                        "message": "Either tuning_data_config or training_data_path in tuning_config is required"
+                    }
+                ),
+            )
+
         paths_to_delete = []
         base_dir = Path(__file__).parent
         output_dir = base_dir / "outputs" / generate_unique_stamps()
@@ -81,9 +107,31 @@ async def recommend(
 
         background_tasks.add_task(delete_files, paths_to_delete)
         return response
+    except ValueError as e:
+        logger.error(f"Validation error: {str(e)}")
+        return JSONResponse(
+            status_code=422,
+            content=jsonable_encoder({"message": str(e)}),
+        )
+    except FileNotFoundError as e:
+        logger.error(f"File not found: {str(e)}")
+        return JSONResponse(
+            status_code=400,
+            content=jsonable_encoder({"message": str(e)}),
+        )
+    except OSError as e:
+        logger.error(f"OSError: {str(e)}")
+        return JSONResponse(
+            status_code=400,
+            content=jsonable_encoder({"message": str(e)}),
+        )
     except Exception as e:
-        logger.error(e)
+        logger.error(f"Unexpected error: {str(e)}")
         return JSONResponse(
             status_code=500,
-            content=jsonable_encoder({"message": err_msg}),
+            content=jsonable_encoder(
+                {
+                    "message": "An unexpected error occurred. Please try again or contact support."
+                }
+            ),
         )

@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from loguru import logger
 
 DYNAMIC_PATTERN = re.compile(r"^\$\{([A-Za-z0-9_]+)\}$")
 
@@ -21,9 +22,21 @@ def safe_serialize(obj):
 
 
 def write_yaml_preserving_templates(obj: Any, path: Path):
-    clean_obj = safe_serialize(obj)
-    with path.open("w", encoding="utf-8") as f:
-        yaml.safe_dump(clean_obj, f, sort_keys=False, allow_unicode=True, width=10000)
+    try:
+        clean_obj = safe_serialize(obj)
+        with path.open("w", encoding="utf-8") as f:
+            yaml.safe_dump(
+                clean_obj, f, sort_keys=False, allow_unicode=True, width=10000
+            )
+    except FileNotFoundError as e:
+        logger.error(f"File not found: {str(e)}")
+        raise FileNotFoundError(f"File not found: {str(e)}") from e
+    except OSError as e:
+        logger.error(f"OS Error: {str(e)}")
+        raise OSError(f"OS Error: {str(e)}") from e
+    except Exception as e:
+        logger.error(f"Error writing YAML to {path}: {str(e)}")
+        raise Exception(f"Failed to write YAML to {path}: {str(e)}") from e
 
 
 def split_static_and_dynamic(cfg: dict):
@@ -62,17 +75,22 @@ def build_launch_command(
     accelerate_config_path: Path,
     dynamic_args: list[str] = None,
 ) -> str:
-    cmd = [
-        "accelerate launch",
-        f"--config_file {accelerate_config_path}",
-        *(dynamic_args or []),
-        "-m 'tuning.sft_trainer'",
-    ]
+    try:
+        cmd = [
+            "accelerate launch",
+            f"--config_file {accelerate_config_path}",
+            *(dynamic_args or []),
+            "-m 'tuning.sft_trainer'",
+        ]
 
-    for k, v in ir.get("tuning_config", {}).items():
-        if v is not None and k != "training_data_path":
-            cmd.append(f"--{k} {fmt_cli_value(v)}")
+        for k, v in ir.get("tuning_config", {}).items():
+            if v is not None and k != "training_data_path":
+                cmd.append(f"--{k} {fmt_cli_value(v)}")
 
-    cmd.append(f"--data_config {data_config_path}")
+        cmd.append(f"--data_config {data_config_path}")
 
-    return " \\\n".join(cmd)
+        return " \
+".join(cmd)
+    except Exception as e:
+        logger.error(f"Error building launch command: {str(e)}")
+        raise Exception(f"Failed to build launch command: {str(e)}") from e

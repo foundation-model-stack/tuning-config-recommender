@@ -13,30 +13,44 @@ from loguru import logger
 
 def extract_data_from_general_file(file_path) -> dict:
     """Data extraction function from json/jsonl/parquet/arrow files"""
-    ext = os.path.splitext(file_path)[-1].lower()
+    try:
+        ext = os.path.splitext(file_path)[-1].lower()
 
-    if ext == ".json":
-        with open(file_path, encoding="utf-8") as f:
-            data = json.load(f)
-    elif ext == ".jsonl":
-        with open(file_path, encoding="utf-8") as f:
-            data = [json.loads(line) for line in f]
-    elif ext == ".csv":
-        with open(file_path, encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            data = list(reader)
-    elif ext == ".parquet":
-        df = pd.read_parquet(file_path)
-        data = df.to_dict(orient="records")
-    elif ext == ".arrow":
-        try:
-            data = load_dataset("arrow", data_files=file_path)
-        except Exception as e:
-            logger.error(f"Failed to load Arrow file: {e}")
-    else:
-        logger.error("Unsupported file format")
+        if ext == ".json":
+            with open(file_path, encoding="utf-8") as f:
+                data = json.load(f)
+        elif ext == ".jsonl":
+            with open(file_path, encoding="utf-8") as f:
+                data = [json.loads(line) for line in f]
+        elif ext == ".csv":
+            with open(file_path, encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                data = list(reader)
+        elif ext == ".parquet":
+            df = pd.read_parquet(file_path)
+            data = df.to_dict(orient="records")
+        elif ext == ".arrow":
+            try:
+                data = load_dataset("arrow", data_files=file_path)
+            except Exception as e:
+                logger.error(f"Failed to load Arrow file: {e}")
+                raise FileNotFoundError(f"Failed to load Arrow file: {str(e)}") from e
+        else:
+            logger.error("Unsupported file format")
+            raise ValueError("Unsupported file format")
 
-    return data
+        return data
+    except FileNotFoundError as e:
+        logger.error(f"File not found: {str(e)}")
+        raise FileNotFoundError(f"File not found: {str(e)}") from e
+    except OSError as e:
+        logger.error(f"OS Error: {str(e)}")
+        raise OSError(f"OS Error: {str(e)}") from e
+    except Exception as e:
+        logger.error(f"Error extracting data from file {file_path}: {str(e)}")
+        raise Exception(
+            f"Failed to extract data from file {file_path}: {str(e)}"
+        ) from e
 
 
 def maybe_is_a_hf_dataset_id(training_data_path: str) -> bool:
@@ -58,26 +72,44 @@ def pick_train_split(dataset) -> str:
 
 def load_training_data(training_data_path: str) -> dict:
     """Load and validate training data based on training_data_path."""
-    _dataset_cache = {}
+    try:
+        _dataset_cache = {}
 
-    # Check if path is a file
-    if os.path.isfile(training_data_path):
-        data = extract_data_from_general_file(training_data_path)
-        return data
-
-    # Check if path is a folder
-    elif os.path.isdir(training_data_path) or maybe_is_a_hf_dataset_id:
-        try:
-            dataset = load_dataset(training_data_path)
-            split = pick_train_split(dataset)
-            data = [dict(example) for example in dataset[split]]
+        # Check if path is a file
+        if os.path.isfile(training_data_path):
+            data = extract_data_from_general_file(training_data_path)
             return data
-        except Exception as e:
-            raise ValueError(f"Error loading dataset from folder or hf id: {e}") from e
 
-    raise ValueError(
-        f"Failed to find a way to load the provided dataset path {training_data_path}"
-    )
+        # Check if path is a folder
+        elif os.path.isdir(training_data_path) or maybe_is_a_hf_dataset_id:
+            try:
+                dataset = load_dataset(training_data_path)
+                split = pick_train_split(dataset)
+                data = [dict(example) for example in dataset[split]]
+                return data
+            except Exception as e:
+                logger.error(f"Error loading dataset from folder or hf id: {str(e)}")
+                raise FileNotFoundError(
+                    f"Error loading dataset from folder or hf id: {str(e)}"
+                ) from e
+
+        logger.error(
+            f"Failed to find a way to load the provided dataset path {training_data_path}"
+        )
+        raise FileNotFoundError(
+            f"Failed to find a way to load the provided dataset path {training_data_path}"
+        )
+    except FileNotFoundError as e:
+        logger.error(f"File not found: {str(e)}")
+        raise FileNotFoundError(f"File not found: {str(e)}") from e
+    except OSError as e:
+        logger.error(f"OS Error: {str(e)}")
+        raise OSError(f"OS Error: {str(e)}") from e
+    except Exception as e:
+        logger.error(f"Error loading training data from {training_data_path}: {str(e)}")
+        raise Exception(
+            f"Failed to load training data from {training_data_path}: {str(e)}"
+        ) from e
 
 
 def load_model_file_from_hf(model_name_or_path: str, file_name: str) -> dict:
@@ -86,11 +118,14 @@ def load_model_file_from_hf(model_name_or_path: str, file_name: str) -> dict:
         config_path = hf_hub_download(repo_id=model_name_or_path, filename=file_name)
         with open(config_path, encoding="utf-8") as f:
             config = json.load(f)
-
-    except Exception:
-        return {}
-
-    return config
+        return config
+    except Exception as e:
+        logger.error(
+            f"Error loading model file {file_name} from {model_name_or_path}: {str(e)}"
+        )
+        raise Exception(
+            f"Failed to load model file {file_name} from {model_name_or_path}: {str(e)}"
+        ) from e
 
 
 def escape_newlines_in_strings(template_str: str) -> str:
@@ -113,25 +148,37 @@ def escape_newlines_in_strings(template_str: str) -> str:
 
 def get_model_path(model_name_or_path: str, unique_tag: str) -> str:
     """Given an indirect model name or path, pick out the exact model name"""
-    model_name_or_path = Path(model_name_or_path)
-    files_to_download = [
-        "config.json",
-        "tokenizer_config.json",
-    ]
+    try:
+        model_name_or_path = Path(model_name_or_path)
+        files_to_download = [
+            "config.json",
+            "tokenizer_config.json",
+        ]
 
-    if os.path.isdir(model_name_or_path):
+        if os.path.isdir(model_name_or_path):
+            return str(model_name_or_path)
+        else:
+            BASE_DIR = Path(__file__).parent.parent
+            cached_model_path = (
+                BASE_DIR / "cached_files" / "models" / model_name_or_path / unique_tag
+            )
+            os.makedirs(cached_model_path, exist_ok=True)
+
+            for filename in files_to_download:
+                src = hf_hub_download(str(model_name_or_path), filename=filename)
+                dst = os.path.join(cached_model_path, filename)
+                shutil.copy(src, dst)
+            model_name_or_path = cached_model_path
+
         return str(model_name_or_path)
-    else:
-        BASE_DIR = Path(__file__).parent.parent
-        cached_model_path = (
-            BASE_DIR / "cached_files" / "models" / model_name_or_path / unique_tag
-        )
-        os.makedirs(cached_model_path, exist_ok=True)
-
-        for filename in files_to_download:
-            src = hf_hub_download(str(model_name_or_path), filename=filename)
-            dst = os.path.join(cached_model_path, filename)
-            shutil.copy(src, dst)
-        model_name_or_path = cached_model_path
-
-    return str(model_name_or_path)
+    except FileNotFoundError as e:
+        logger.error(f"File not found: {str(e)}")
+        raise FileNotFoundError(f"File not found: {str(e)}") from e
+    except OSError as e:
+        logger.error(f"OS Error: {str(e)}")
+        raise OSError(f"OS Error: {str(e)}") from e
+    except Exception as e:
+        logger.error(f"Error getting model path for {model_name_or_path}: {str(e)}")
+        raise Exception(
+            f"Failed to get model path for {model_name_or_path}: {str(e)}"
+        ) from e

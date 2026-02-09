@@ -181,19 +181,23 @@ class ApplyOptimalBatchSize(Action):
         if self.heuristic_skip(ir) or self.skip:
             self.skip = True
             return
-
+        per_device_train_batch_size = ir.tuning_config.get(
+            "per_device_train_batch_size", 8
+        )
+        max_seq_length = ir.tuning_config.get("max_seq_length", 4096)
         input_dict = {
+            "per_device_train_batch_size": per_device_train_batch_size,
             "model_name_or_path": ir.tuning_config["model_name_or_path"],
             "tuning_strategy": ir.tuning_config["tuning_strategy"],
-            "max_seq_length": ir.tuning_config.get("max_seq_length", 2048),
+            "max_seq_length": max_seq_length,
         }
         output_dict = use_kb_for_batch_size(input_dict)
         return_ir = IR(
             tuning_config={
                 "per_device_train_batch_size": output_dict.get(
-                    "per_device_train_batch_size", 1
+                    "per_device_train_batch_size", per_device_train_batch_size
                 ),
-                "max_seq_length": output_dict.get("model_max_length", 2048),
+                "max_seq_length": output_dict.get("model_max_length", max_seq_length),
             },
             type=PatchType.COMPATIBILITY,
             effect=[
