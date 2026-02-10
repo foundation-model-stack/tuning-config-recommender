@@ -5,6 +5,50 @@ from tuning_config_recommender.actions.actions import IR
 from tuning_config_recommender.actions.compute import ApplyComputeConfig
 
 
+class TestInferModelName:
+    """Unit tests for _infer_model_name method"""
+
+    def test_infer_model_name_with_lh_protocol_and_timestamp(self):
+        """Test model name inference from lh:// protocol path with timestamp suffix"""
+        action = ApplyComputeConfig()
+        input_path = 'lh://prod/base_training/models/model_shared/granite-4.0-h-micro/r251007a'
+        expected = 'granite-4.0-h-micro'
+        result = action._infer_model_name(input_path)
+        assert result == expected, f"Expected '{expected}', got '{result}'"
+
+    def test_infer_model_name_with_absolute_path_and_timestamp(self):
+        """Test model name inference from absolute path with timestamp suffix"""
+        action = ApplyComputeConfig()
+        input_path = '/home/shared/granite-2b-base/20250319T181102'
+        expected = 'granite-2b-base'
+        result = action._infer_model_name(input_path)
+        assert result == expected, f"Expected '{expected}', got '{result}'"
+
+    def test_infer_model_name_with_org_prefix(self):
+        """Test model name inference from org/model format"""
+        action = ApplyComputeConfig()
+        input_path = 'ibm-granite/granite-3.1-8b-base'
+        expected = 'granite-3.1-8b-base'
+        result = action._infer_model_name(input_path)
+        assert result == expected, f"Expected '{expected}', got '{result}'"
+
+    def test_infer_model_name_simple_path(self):
+        """Test model name inference from simple model name"""
+        action = ApplyComputeConfig()
+        input_path = 'granite-3.0-8b-instruct'
+        expected = 'granite-3.0-8b-instruct'
+        result = action._infer_model_name(input_path)
+        assert result == expected, f"Expected '{expected}', got '{result}'"
+
+    def test_infer_model_name_with_multiple_timestamps(self):
+        """Test model name inference with multiple timestamp-like components"""
+        action = ApplyComputeConfig()
+        input_path = '/models/granite-7b/r123456/20250101T120000'
+        expected = 'granite-7b'
+        result = action._infer_model_name(input_path)
+        assert result == expected, f"Expected '{expected}', got '{result}'"
+
+
 class TestApplyComputeConfig:
     """Unit tests for ApplyComputeConfig action"""
 
@@ -46,8 +90,9 @@ class TestApplyComputeConfig:
         return_ir = action.apply(ir, actions_meta=[])
 
         # Assert that the recommender was called with the correct configuration
+        # Note: model_name should be inferred from the path
         expected_config = {
-            "model_name": "/home/granite-2b-base/20250319T181102",
+            "model_name": "granite-2b-base",
             "method": "full",
             "gpu_model": "NVIDIA-A100-SXM4-80GB",
             "tokens_per_sample": 65536,

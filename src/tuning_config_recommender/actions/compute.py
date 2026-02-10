@@ -38,6 +38,63 @@ class ApplyComputeConfig(Action):
 
     def heuristic_skip(self, ir):
         return skip_autoconf
+    
+    def _infer_model_name(self, m: str) -> str:
+        """
+        Method to infer model name from model_name_or_path parameter in the IR
+        :param m: model_name_or_path parameter value from the IR
+        :type m: str
+        :return: the model name to pass to the min gpu recommender.
+        This has been extracted from the IR and mapped to a model name in the Min GPU recommender database.
+        The mapping will return the input if no match is found.
+        :rtype: str
+        
+        Examples:
+            'lh://prod/base_training/models/model_shared/granite-4.0-h-micro/r251007a' -> 'granite-4.0-h-micro'
+            '/home/shared/granite-2b-base/20250319T181102' -> 'granite-2b-base'
+            'ibm-granite/granite-3.1-8b-base' -> 'granite-3.1-8b-base'
+        """
+        import re
+        
+        logger.debug(f"Model path received: {m}")
+        
+        # Split by '/' to get path components
+        components = m.split('/')
+        
+        # Filter out empty components
+        components = [c for c in components if c]
+        
+        if not components:
+            logger.warning(f"No valid components found in model path: {m}")
+            return m
+        
+        # Pattern to identify timestamp-like suffixes (e.g., r251007a, 20250319T181102)
+        # These typically start with 'r' followed by digits, or are pure date/timestamp formats
+        timestamp_pattern = re.compile(r'^(r\d+[a-z]?|\d{8}T\d{6}|\d{14})$', re.IGNORECASE)
+        
+        # Work backwards through components to find the model name
+        # Skip the last component if it looks like a timestamp/tag
+        for i in range(len(components) - 1, -1, -1):
+            component = components[i]
+            
+            # Skip if it matches timestamp pattern
+            if timestamp_pattern.match(component):
+                logger.debug(f"Skipping timestamp-like component: {component}")
+                continue
+            
+            # Skip protocol prefixes (e.g., 'lh:', 'http:', 'https:')
+            if component.endswith(':'):
+                logger.debug(f"Skipping protocol component: {component}")
+                continue
+            
+            # This should be the model name
+            logger.debug(f"Inferred model name: {component}")
+            return component
+        
+        # Fallback: return the last non-empty component
+        result = components[-1]
+        logger.debug(f"Fallback to last component: {result}")
+        return result
 
     def _validate_required_configs(self, ir: IR) -> bool:
         """Validate that required configs are present in IR.
@@ -79,9 +136,12 @@ class ApplyComputeConfig(Action):
         model_name = ir.tuning_config.get("model_name_or_path") or ir.tuning_config.get("hf_path")
         if not model_name:
             raise ValueError(f"model name was not populated in the representation {ir}")
+        
+        # Infer the actual model name from the path
+        inferred_model_name = self._infer_model_name(model_name)
 
         return {
-            "model_name": model_name,
+            "model_name": inferred_model_name,
             "method": ir.tuning_config.get("tuning_strategy", self.DEFAULT_TUNING_METHOD),
             "gpu_model": self.DEFAULT_GPU_MODEL,  # TODO: Make configurable based on environment
             "tokens_per_sample": ir.tuning_config.get("max_seq_length", self.DEFAULT_MAX_SEQ_LENGTH),
