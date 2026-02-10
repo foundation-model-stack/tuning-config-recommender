@@ -9,9 +9,9 @@ class TestInferModelName:
     """Unit tests for _infer_model_name method"""
 
     def test_infer_model_name_with_lh_protocol_and_timestamp(self):
-        """Test model name inference from lh:// protocol path with timestamp suffix"""
+        """Test model name inference from prefix:// protocol path with timestamp suffix"""
         action = ApplyComputeConfig()
-        input_path = 'lh://prod/base_training/models/model_shared/granite-4.0-h-micro/r251007a'
+        input_path = 'prefix://prod/base_training/models/model_shared/granite-4.0-h-micro/r251007a'
         expected = 'granite-4.0-h-micro'
         result = action._infer_model_name(input_path)
         assert result == expected, f"Expected '{expected}', got '{result}'"
@@ -19,7 +19,7 @@ class TestInferModelName:
     def test_infer_model_name_with_absolute_path_and_timestamp(self):
         """Test model name inference from absolute path with timestamp suffix"""
         action = ApplyComputeConfig()
-        input_path = '/home/shared/granite-2b-base/20250319T181102'
+        input_path = '/root/subdir1/shared/granite-2b-base/20250319T181102'
         expected = 'granite-2b-base'
         result = action._infer_model_name(input_path)
         assert result == expected, f"Expected '{expected}', got '{result}'"
@@ -61,7 +61,7 @@ class TestApplyComputeConfig:
         # Construct IR object with specified configurations
         ir = IR(
             tuning_config={
-                "hf_path": "/home/granite-2b-base/20250319T181102",
+                "model_name_or_path": "/root/subdir1/granite-2b-base/20250319T181102",
                 "max_seq_length": 65536,
                 "per_device_train_batch_size": 1,
             },
@@ -118,7 +118,7 @@ class TestApplyComputeConfig:
         # Construct IR object with lower GPU count
         ir = IR(
             tuning_config={
-                "hf_path": "/home/shared/granite-2b-base/20250319T181102",
+                "model_name_or_path": "/root/subdir1/shared/granite-2b-base/20250319T181102",
                 "max_seq_length": 65536,
                 "per_device_train_batch_size": 1,
             },

@@ -50,8 +50,8 @@ class ApplyComputeConfig(Action):
         :rtype: str
 
         Examples:
-            'lh://prod/base_training/models/model_shared/granite-4.0-h-micro/r251007a' -> 'granite-4.0-h-micro'
-            '/home/shared/granite-2b-base/20250319T181102' -> 'granite-2b-base'
+            'prefix://prod/base_training/models/model_shared/granite-4.0-h-micro/r251007a' -> 'granite-4.0-h-micro'
+            '/root_dir/sub_dir1/granite-2b-base/20250319T181102' -> 'granite-2b-base'
             'ibm-granite/granite-3.1-8b-base' -> 'granite-3.1-8b-base'
         """
         import re
@@ -82,7 +82,7 @@ class ApplyComputeConfig(Action):
                 logger.debug(f"Skipping timestamp-like component: {component}")
                 continue
 
-            # Skip protocol prefixes (e.g., 'lh:', 'http:', 'https:')
+            # Skip protocol prefixes (e.g. 'http:', 'https:')
             if component.endswith(':'):
                 logger.debug(f"Skipping protocol component: {component}")
                 continue
@@ -133,12 +133,17 @@ class ApplyComputeConfig(Action):
         assert ir.tuning_config is not None
 
         # Extract model name with fallback
-        model_name = ir.tuning_config.get("model_name_or_path") or ir.tuning_config.get("hf_path")
+        model_name = ir.tuning_config.get("model_name_or_path") 
         if not model_name:
             raise ValueError(f"model name was not populated in the representation {ir}")
 
         # Infer the actual model name from the path
         inferred_model_name = self._infer_model_name(model_name)
+
+        # Extract current compute config
+        assert ir.compute_config is not None
+        num_nodes = ir.compute_config.get("num_nodes", 1)
+        num_gpus_per_node = ir.compute_config.get("num_gpus_per_node", 8)
 
         return {
             "model_name": inferred_model_name,

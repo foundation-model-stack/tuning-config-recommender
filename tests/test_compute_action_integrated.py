@@ -20,7 +20,7 @@ def test_apply_with_lower_recommendation(get_compute_action):
     # Construct IR object with lower GPU count
     ir: IR = IR(
         tuning_config={
-            "hf_path": "ibm-granite/granite-3.1-8b-base",
+            "model_name_or_path": "ibm-granite/granite-3.1-8b-base",
             "max_seq_length": 1024,
             "per_device_train_batch_size": 1,
         },
@@ -45,7 +45,7 @@ def test_apply_with_higher_recommendation(get_compute_action):
     # Construct IR object with lower GPU count
     ir: IR = IR(
         tuning_config={
-            "hf_path": "/home/shared/granite-2b-base/20250319T181102",
+            "model_name_or_path": "/root/subdir/granite-2b-base/20250319T181102",
             "max_seq_length": 32768,
             "per_device_train_batch_size": 8,
         },
