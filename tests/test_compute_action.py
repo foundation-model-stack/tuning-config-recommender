@@ -17,7 +17,7 @@ class TestApplyComputeConfig:
         # Construct IR object with specified configurations
         ir = IR(
             tuning_config={
-                "model_name_or_path": "/lhprodreadonly/models/granite_dot_build/public/shared/granite-2b-base/20250319T181102",
+                "hf_path": "/home/granite-2b-base/20250319T181102",
                 "max_seq_length": 65536,
                 "per_device_train_batch_size": 1,
             },
@@ -47,7 +47,7 @@ class TestApplyComputeConfig:
 
         # Assert that the recommender was called with the correct configuration
         expected_config = {
-            "model_name": "/lhprodreadonly/models/granite_dot_build/public/shared/granite-2b-base/20250319T181102",
+            "model_name": "/home/granite-2b-base/20250319T181102",
             "method": "full",
             "gpu_model": "NVIDIA-A100-SXM4-80GB",
             "tokens_per_sample": 65536,
@@ -73,7 +73,7 @@ class TestApplyComputeConfig:
         # Construct IR object with lower GPU count
         ir = IR(
             tuning_config={
-                "model_name_or_path": "/lhprodreadonly/models/granite_dot_build/public/shared/granite-2b-base/20250319T181102",
+                "hf_path": "/home/shared/granite-2b-base/20250319T181102",
                 "max_seq_length": 65536,
                 "per_device_train_batch_size": 1,
             },
@@ -106,5 +106,3 @@ class TestApplyComputeConfig:
         assert return_ir.compute_config is not None
         assert return_ir.compute_config["num_nodes"] == 2
         assert return_ir.compute_config["num_gpus_per_node"] == 4
-
-# Made with Bob
