@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 
 from tuning_config_recommender.actions.actions import IR
 from tuning_config_recommender.actions.compute import ApplyComputeConfig
@@ -11,40 +12,40 @@ class TestInferModelName:
     def test_infer_model_name_with_lh_protocol_and_timestamp(self):
         """Test model name inference from prefix:// protocol path with timestamp suffix"""
         action = ApplyComputeConfig()
-        input_path = 'prefix://prod/base_training/models/model_shared/granite-4.0-h-micro/r251007a'
-        expected = 'granite-4.0-h-micro'
+        input_path = "prefix://prod/base_training/models/model_shared/granite-4.0-h-micro/r251007a"
+        expected = "granite-4.0-h-micro"
         result = action._infer_model_name(input_path)
         assert result == expected, f"Expected '{expected}', got '{result}'"
 
     def test_infer_model_name_with_absolute_path_and_timestamp(self):
         """Test model name inference from absolute path with timestamp suffix"""
         action = ApplyComputeConfig()
-        input_path = '/root/subdir1/shared/granite-2b-base/20250319T181102'
-        expected = 'granite-2b-base'
+        input_path = "/root/subdir1/shared/granite-2b-base/20250319T181102"
+        expected = "granite-2b-base"
         result = action._infer_model_name(input_path)
         assert result == expected, f"Expected '{expected}', got '{result}'"
 
     def test_infer_model_name_with_org_prefix(self):
         """Test model name inference from org/model format"""
         action = ApplyComputeConfig()
-        input_path = 'ibm-granite/granite-3.1-8b-base'
-        expected = 'granite-3.1-8b-base'
+        input_path = "ibm-granite/granite-3.1-8b-base"
+        expected = "granite-3.1-8b-base"
         result = action._infer_model_name(input_path)
         assert result == expected, f"Expected '{expected}', got '{result}'"
 
     def test_infer_model_name_simple_path(self):
         """Test model name inference from simple model name"""
         action = ApplyComputeConfig()
-        input_path = 'granite-3.0-8b-instruct'
-        expected = 'granite-3.0-8b-instruct'
+        input_path = "granite-3.0-8b-instruct"
+        expected = "granite-3.0-8b-instruct"
         result = action._infer_model_name(input_path)
         assert result == expected, f"Expected '{expected}', got '{result}'"
 
     def test_infer_model_name_with_multiple_timestamps(self):
         """Test model name inference with multiple timestamp-like components"""
         action = ApplyComputeConfig()
-        input_path = '/models/granite-7b/r123456/20250101T120000'
-        expected = 'granite-7b'
+        input_path = "/models/granite-7b/r123456/20250101T120000"
+        expected = "granite-7b"
         result = action._infer_model_name(input_path)
         assert result == expected, f"Expected '{expected}', got '{result}'"
 
@@ -98,7 +99,7 @@ class TestApplyComputeConfig:
             "tokens_per_sample": 65536,
             "per_device_train_batch_size": 1,
         }
-        
+
         # Verify run was called only once with the config and "avoid_oom" parameter
         mock_recommender.run.assert_called_once_with(expected_config, "avoid_oom")
 

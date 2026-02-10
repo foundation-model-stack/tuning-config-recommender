@@ -59,7 +59,7 @@ class ApplyComputeConfig(Action):
         logger.debug(f"Model path received: {m}")
 
         # Split by '/' to get path components
-        components = m.split('/')
+        components = m.split("/")
 
         # Filter out empty components
         components = [c for c in components if c]
@@ -70,7 +70,9 @@ class ApplyComputeConfig(Action):
 
         # Pattern to identify timestamp-like suffixes (e.g., r251007a, 20250319T181102)
         # These typically start with 'r' followed by digits, or are pure date/timestamp formats
-        timestamp_pattern = re.compile(r'^(r\d+[a-z]?|\d{8}T\d{6}|\d{14})$', re.IGNORECASE)
+        timestamp_pattern = re.compile(
+            r"^(r\d+[a-z]?|\d{8}T\d{6}|\d{14})$", re.IGNORECASE
+        )
 
         # Work backwards through components to find the model name
         # Skip the last component if it looks like a timestamp/tag
@@ -83,7 +85,7 @@ class ApplyComputeConfig(Action):
                 continue
 
             # Skip protocol prefixes (e.g. 'http:', 'https:')
-            if component.endswith(':'):
+            if component.endswith(":"):
                 logger.debug(f"Skipping protocol component: {component}")
                 continue
 
@@ -106,12 +108,16 @@ class ApplyComputeConfig(Action):
             bool: True if valid, False otherwise (sets self.skip and logs warning)
         """
         if not ir.compute_config:
-            logger.warning("compute_config is not present in IR, skipping compute action")
+            logger.warning(
+                "compute_config is not present in IR, skipping compute action"
+            )
             self.skip = True
             return False
 
         if not ir.tuning_config:
-            logger.warning("tuning_config is not present in IR, skipping compute action")
+            logger.warning(
+                "tuning_config is not present in IR, skipping compute action"
+            )
             self.skip = True
             return False
 
@@ -133,7 +139,7 @@ class ApplyComputeConfig(Action):
         assert ir.tuning_config is not None
 
         # Extract model name with fallback
-        model_name = ir.tuning_config.get("model_name_or_path") 
+        model_name = ir.tuning_config.get("model_name_or_path")
         if not model_name:
             raise ValueError(f"model name was not populated in the representation {ir}")
 
@@ -141,23 +147,26 @@ class ApplyComputeConfig(Action):
         inferred_model_name = self._infer_model_name(model_name)
 
         # Extract current compute config
-        assert ir.compute_config is not None
-        num_nodes = ir.compute_config.get("num_nodes", 1)
-        num_gpus_per_node = ir.compute_config.get("num_gpus_per_node", 8)
+        # assert ir.compute_config is not None
+        # num_nodes = ir.compute_config.get("num_nodes", 1)
+        # num_gpus_per_node = ir.compute_config.get("num_gpus_per_node", 8)
 
         return {
             "model_name": inferred_model_name,
-            "method": ir.tuning_config.get("tuning_strategy", self.DEFAULT_TUNING_METHOD),
+            "method": ir.tuning_config.get(
+                "tuning_strategy", self.DEFAULT_TUNING_METHOD
+            ),
             "gpu_model": self.DEFAULT_GPU_MODEL,  # TODO: Make configurable based on environment
-            "tokens_per_sample": ir.tuning_config.get("max_seq_length", self.DEFAULT_MAX_SEQ_LENGTH),
-            "per_device_train_batch_size": ir.tuning_config.get("per_device_train_batch_size", self.DEFAULT_BATCH_SIZE),
+            "tokens_per_sample": ir.tuning_config.get(
+                "max_seq_length", self.DEFAULT_MAX_SEQ_LENGTH
+            ),
+            "per_device_train_batch_size": ir.tuning_config.get(
+                "per_device_train_batch_size", self.DEFAULT_BATCH_SIZE
+            ),
         }
 
     def _apply_recommendation(
-        self,
-        config: dict,
-        current_nodes: int,
-        current_gpus: int
+        self, config: dict, current_nodes: int, current_gpus: int
     ) -> tuple[int, int]:
         """Apply GPU recommender and decide whether to use recommendation.
 
@@ -175,7 +184,9 @@ class ApplyComputeConfig(Action):
 
         # Early return if recommender failed
         if result["gpus_per_worker"] == self.RECOMMENDER_FAILURE_CODE:
-            logger.debug(f"Recommender was not able to issue recommendation for {config}")
+            logger.debug(
+                f"Recommender was not able to issue recommendation for {config}"
+            )
             return current_nodes, current_gpus
 
         recommended_nodes = result["workers"]
@@ -191,10 +202,14 @@ class ApplyComputeConfig(Action):
 
         # Only apply recommendation if it suggests more GPUs (to avoid OOM)
         if total_gpus_recommended > total_gpus_original:
-            logger.debug("Replacing original compute config with recommender's suggestion")
+            logger.debug(
+                "Replacing original compute config with recommender's suggestion"
+            )
             return recommended_nodes, recommended_gpus
         else:
-            logger.debug("Recommender's suggestion is lower than original request, keeping original")
+            logger.debug(
+                "Recommender's suggestion is lower than original request, keeping original"
+            )
             return current_nodes, current_gpus
 
     def _generate_comment(self, num_nodes: int, num_gpus_per_node: int) -> str:
@@ -247,7 +262,9 @@ class ApplyComputeConfig(Action):
         num_nodes = ir.compute_config.get("num_nodes", 1)
         num_gpus_per_node = ir.compute_config.get("num_gpus_per_node", 8)
 
-        logger.debug(f"IR has configuration: {num_nodes} nodes, {num_gpus_per_node} GPUs")
+        logger.debug(
+            f"IR has configuration: {num_nodes} nodes, {num_gpus_per_node} GPUs"
+        )
 
         # Build and apply recommendation
         try:

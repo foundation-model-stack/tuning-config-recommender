@@ -8,9 +8,11 @@ def test_min_gpu_recommender_caller():
     action = ApplyComputeConfig()
     assert action._recommender is not None
 
+
 @pytest.fixture
 def get_compute_action() -> ApplyComputeConfig:
     yield ApplyComputeConfig()
+
 
 def test_apply_with_lower_recommendation(get_compute_action):
     """
@@ -36,6 +38,7 @@ def test_apply_with_lower_recommendation(get_compute_action):
     assert return_ir.compute_config is not None
     assert return_ir.compute_config["num_nodes"] == 4
     assert return_ir.compute_config["num_gpus_per_node"] == 8
+
 
 def test_apply_with_higher_recommendation(get_compute_action):
     """
